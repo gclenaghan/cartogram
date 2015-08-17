@@ -2,3 +2,7 @@
 	fill: none;
 	pointer-events: all;
 }
+
+.road {
+	stroke: steelblue;
+}

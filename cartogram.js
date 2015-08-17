@@ -29,16 +29,21 @@ function zoomed()
 	map_g.attr("transform", "translate("  + d3.event.translate + ")scale(" + d3.event.scale + ")");
 }
 
-d3.csv("stationlocation.csv",
+d3.json("wsdottrafficflow8162015.json",
 	function(data)
-	{	
+	{
 		map_g.selectAll("circle")
 			.data(data)
 			.enter()
 			.append("circle")
-			.attr("fill", "steelblue")
-			.attr("r", 2)
-			.attr("cx", function(d) {console.log(d); return proj([+d["Longitude"], +d["Latitude"]])[0];})
-			.attr("cy", function(d) {return proj([+d["Longitude"], +d["Latitude"]])[1];});
-		
+			.attr("class", function(d) {return "station val" + d.FlowReadingValue;})
+			.attr("r", function(d) {return d.FlowReadingValue + 1;})
+			.attr("cx", function(d)
+				{
+					return proj([d.FlowStationLocation.Longitude, d.FlowStationLocation.Latitude])[0];
+				})
+			.attr("cy", function(d)
+				{
+					return proj([d.FlowStationLocation.Longitude, d.FlowStationLocation.Latitude])[1];
+				});
 	});
