@@ -1,12 +1,15 @@
-var width = 480, height = 960;
-
-var zoom = d3.behavior.zoom()
-	.scaleExtent([1,8])
-	.on("zoom", zoomed);
+var width = 480, height = 540;
 
 var proj = d3.geo.mercator()
 	.center([-121.33, 47.9])
-	.scale(10000)
+	.scale(10000);
+
+var zoom = d3.behavior.zoom()
+	.translate(proj.translate())
+	.scale(proj.scale())
+	.scaleExtent([10000,80000])
+	.on("zoom", zoomed);
+
 
 var svg = d3.select("#map")
 	.append("svg")
@@ -26,12 +29,24 @@ svg.call(zoom)
 
 function zoomed()
 {
-	map_g.attr("transform", "translate("  + d3.event.translate + ")scale(" + d3.event.scale + ")");
+	console.log(d3.event);
+	proj.translate(d3.event.translate).scale(d3.event.scale);
+	map_g.selectAll("circle")
+		.attr("cx", function(d)
+			{
+				return proj([d.FlowStationLocation.Longitude, d.FlowStationLocation.Latitude])[0];
+			})
+		.attr("cy", function(d)
+			{
+				return proj([d.FlowStationLocation.Longitude, d.FlowStationLocation.Latitude])[1];
+			});
 }
 
-d3.json("wsdottrafficflow8162015.json",
+var flow;
+d3.json("wsdottrafficflow8172015.json",
 	function(data)
 	{
+		flow = data;
 		map_g.selectAll("circle")
 			.data(data)
 			.enter()
