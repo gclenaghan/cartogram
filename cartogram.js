@@ -11,6 +11,11 @@ var zoom = d3.behavior.zoom()
 	.on("zoom", zoomed);
 
 
+var road_line = d3.svg.line()
+	.x(function(d) { return proj([d.FlowStationLocation.Longitude, d.FlowStationLocation.Latitude])[0]; })
+	.y(function(d) { return proj([d.FlowStationLocation.Longitude, d.FlowStationLocation.Latitude])[1]; })
+	.interpolate("basis");
+
 var svg = d3.select("#map")
 	.append("svg")
 	.attr("width", width)
@@ -29,7 +34,6 @@ svg.call(zoom)
 
 function zoomed()
 {
-	console.log(d3.event);
 	proj.translate(d3.event.translate).scale(d3.event.scale);
 	map_g.selectAll("circle")
 		.attr("cx", function(d)
@@ -40,13 +44,28 @@ function zoomed()
 			{
 				return proj([d.FlowStationLocation.Longitude, d.FlowStationLocation.Latitude])[1];
 			});
+	map_g.selectAll("path")
+		.attr("d", function(d) { return road_line(d.values); });
 }
 
 var flow;
 d3.json("wsdottrafficflow8172015.json",
 	function(data)
 	{
-		flow = data;
+		data = data.filter(function(d) { return d.FlowStationLocation.Longitude != 0; });
+		flow = d3.nest()
+			.key(function(d) {return d.FlowStationLocation.Direction + d.FlowStationLocation.RoadName;})
+			.sortValues(function(a, b) {return a.FlowStationLocation.MilePost - b.FlowStationLocation.MilePost;})
+			.entries(data);
+		
+		map_g.selectAll("path")
+			.data(flow)
+			.enter()
+			.append("path")
+			.attr("class", "road")
+			.attr("id", function(d) {return d.key; })
+			.attr("d", function(d) { return road_line(d.values); });
+		
 		map_g.selectAll("circle")
 			.data(data)
 			.enter()
