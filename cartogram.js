@@ -27,7 +27,6 @@ svg.append("rect")
 svg.call(zoom)
 	.call(zoom.event);
 
-var flow;
 d3.json("wsdottrafficflow8172015.json",
 	function(data)
 	{
@@ -40,10 +39,6 @@ d3.json("wsdottrafficflow8172015.json",
 		//Also, it's convenient to store the index here
 		data = data.filter(function(d) { return d.FlowStationLocation.Longitude != 0; })
 			.map(function(d, i) {d["index"] = i; return d;});
-		flow = d3.nest()
-			.key(function(d) {return d.FlowStationLocation.Direction + d.FlowStationLocation.RoadName;})
-			.sortValues(function(a, b) {return a.FlowStationLocation.MilePost - b.FlowStationLocation.MilePost;})
-			.entries(data);
 		
 		//Create two copies of every flow station: one to be held in place, and the other (visible) to be forced according to traffic
 		//The two nodes will be linked together
@@ -55,6 +50,10 @@ d3.json("wsdottrafficflow8172015.json",
 			{
 				return {"x":d.FlowStationLocation.Longitude, "y":d.FlowStationLocation.Latitude, "fixed":false, "flow": d};
 			});
+		var roadnest = d3.nest()
+			.key(function(d) {return d.flow.FlowStationLocation.Direction + d.flow.FlowStationLocation.RoadName;})
+			.sortValues(function(a, b) {return a.flow.FlowStationLocation.MilePost - b.flow.FlowStationLocation.MilePost;})
+			.entries(forced_nodes);		
 			
 		var nodes = forced_nodes.concat(fixed_nodes);
 		
@@ -65,13 +64,15 @@ d3.json("wsdottrafficflow8172015.json",
 			});
 				
 		//Create links between adjacent nodes
-		flow.forEach(function(road)
+		roadnest.forEach(function(road)
 			{
 				road.values.forEach(function(d, i)
 					{
 						if (i+1 < road.values.length)
 						{
-							links.push({"source":d.index, "target":road.values[i+1].index, "dist":flow_scale(d.FlowReadingValue)*flow_station_dist(d, road.values[i+1])});
+							links.push({"source":d,
+								"target":road.values[i+1],
+								"dist":flow_scale(d.flow.FlowReadingValue)*flow_station_dist(d.flow, road.values[i+1].flow)});
 						}
 					});
 			});
@@ -84,18 +85,20 @@ d3.json("wsdottrafficflow8172015.json",
 			.linkDistance(function(d) {return d.dist;})
 			.on("tick", ticked)
 			.start();
+			
+		var road_path = d3.svg.line()
+			.x(function(d) { return proj([d.x, d.y])[0]; })
+			.y(function(d) { return proj([d.x, d.y])[1]; })
+			.interpolate("basis");
 
 		var roads = map_g.selectAll(".road") //Draw a line for each road link
-			.data(links.filter(function(d) {return d.dist != 0;}))
+			.data(roadnest)
 			.enter()
-			.append("line")
-				.attr("class", function(d) { return "road " + d.source.flow.FlowStationLocation.Direction; })
-				.style("stroke", function(d) {return road_color_scale(d.source.flow.FlowStationLocation.Direction); })
-				.attr("x1", function(d) {return proj([d.source.x, d.source.y])[0];})
-				.attr("y1", function(d) {return proj([d.source.x, d.source.y])[1];})
-				.attr("x2", function(d) {return proj([d.target.x, d.target.y])[0];})
-				.attr("y2", function(d) {return proj([d.target.x, d.target.y])[1];})
-		
+			.append("path")
+				.attr("class", function(d) { return "road " + d.values[0].flow.FlowStationLocation.Direction; })
+				.style("stroke", function(d) {return road_color_scale(d.values[0].flow.FlowStationLocation.Direction); })
+				.attr("d", function(d) { return road_path(d.values); });
+
 		var stations = map_g.selectAll("circle")
 			.data(forced_nodes)
 			.enter()
@@ -107,10 +110,7 @@ d3.json("wsdottrafficflow8172015.json",
 		zoom.on("zoom", zoomed);
 		function ticked()
 		{
-			roads.attr("x1", function(d) {return proj([d.source.x, d.source.y])[0];})
-				.attr("y1", function(d) {return proj([d.source.x, d.source.y])[1];})
-				.attr("x2", function(d) {return proj([d.target.x, d.target.y])[0];})
-				.attr("y2", function(d) {return proj([d.target.x, d.target.y])[1];})
+			roads.attr("d", function(d) { return road_path(d.values); });
 			stations.attr("cx", function(d) { return proj([d.x, d.y])[0]; })
 				.attr("cy", function(d) { return proj([d.x, d.y])[1]; });
 		}
