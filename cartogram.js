@@ -32,7 +32,8 @@ d3.json("wsdottrafficflow8172015.json",
 	{
 		var flow_scale = d3.scale.ordinal()
 			.domain(d3.range(6))
-			.range([1, 1, 1.5, 2, 3, 1]);
+			//.range([1, 1, 1.5, 2, 3, 1]);
+			.range([1,1,1.5,3,4,1]);
 		var road_color_scale = d3.scale.category10()
 			.domain(["NB", "SB", "EB", "WB"]);
 		//Some data points have improper lat/long.
@@ -89,7 +90,7 @@ d3.json("wsdottrafficflow8172015.json",
 		var road_path = d3.svg.line()
 			.x(function(d) { return proj([d.x, d.y])[0]; })
 			.y(function(d) { return proj([d.x, d.y])[1]; })
-			.interpolate("basis");
+			.interpolate("cardinal");
 
 		var roads = map_g.selectAll(".road") //Draw a line for each road link
 			.data(roadnest)
@@ -99,20 +100,20 @@ d3.json("wsdottrafficflow8172015.json",
 				.style("stroke", function(d) {return road_color_scale(d.values[0].flow.FlowStationLocation.Direction); })
 				.attr("d", function(d) { return road_path(d.values); });
 
-		var stations = map_g.selectAll("circle")
+		/*var stations = map_g.selectAll("circle")
 			.data(forced_nodes)
 			.enter()
 			.append("circle")
 				.attr("class", function(d) {return "station val" + d.flow.FlowReadingValue;})
 				.attr("r", function(d) {return flow_scale(d.flow.FlowReadingValue);})
 				.attr("cx", function(d) { return proj([d.x, d.y])[0]; })
-				.attr("cy", function(d) { return proj([d.x, d.y])[1]; });
+				.attr("cy", function(d) { return proj([d.x, d.y])[1]; });*/
 		zoom.on("zoom", zoomed);
 		function ticked()
 		{
 			roads.attr("d", function(d) { return road_path(d.values); });
-			stations.attr("cx", function(d) { return proj([d.x, d.y])[0]; })
-				.attr("cy", function(d) { return proj([d.x, d.y])[1]; });
+			/*stations.attr("cx", function(d) { return proj([d.x, d.y])[0]; })
+				.attr("cy", function(d) { return proj([d.x, d.y])[1]; });*/
 		}
 		function zoomed()
 		{
