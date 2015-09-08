@@ -21,7 +21,6 @@ location but is pushed away from nearby nodes in heavy traffic, typically creati
 in those areas.
 
 ##Potential future features:
- * More example files
  * Live traffic
  * Background map to help orientation
  * Ability to filter which roads are shown, by name or direction of travel.
