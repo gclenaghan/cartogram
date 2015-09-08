@@ -27,4 +27,17 @@ body {
 .road {
 	fill: none;
 	stroke-width: 5px;
+	stroke-linejoin: round;
+}
+
+.states {
+	fill: none;
+	stroke: black;
+	stroke-width: 2px;
+	stroke-linejoin: round;
+}
+
+.counties {
+	stroke: grey;
+	fill: none;
 }

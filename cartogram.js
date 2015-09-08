@@ -30,6 +30,22 @@ svg.append("rect")
 svg.call(zoom)
 	.call(zoom.event);
 
+
+d3.json("https://gist.githubusercontent.com/mbostock/4090846/raw/d534aba169207548a8a3d670c9c2cc719ff05c47/us.json",
+	function(us)
+	{
+		var geo_path = d3.geo.path()
+			.projection(proj);
+		var counties = svg.append("g")
+			.attr("class", "counties")
+			.selectAll("path")
+			.data(topojson.feature(us, us.objects.counties).features)
+			.enter().append("path")
+				.attr("d", geo_path);
+		var states = svg.append("path")
+			.datum(topojson.mesh(us, us.objects.states, function(a, b) {return a !== b; }))
+			.attr("class", "states")
+			.attr("d", geo_path);
 d3.json("827flows/0.json",
 	function(data)
 	{
@@ -126,6 +142,8 @@ d3.json("827flows/0.json",
 		function zoomed()
 		{
 			proj.translate(d3.event.translate).scale(d3.event.scale);
+			states.attr("d", geo_path);
+			counties.attr("d", geo_path);
 			ticked();
 		}
 		function flow_station_dist(a, b)
@@ -214,4 +232,6 @@ d3.json("827flows/0.json",
 				.linkDistance(function(d) { return d.dist; })
 				.start();
 		}
+	});
+			
 	});
