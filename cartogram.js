@@ -135,25 +135,80 @@ d3.json("827flows/8.json",
 		function newflowdata(data)
 		{
 			data = data.filter(function(d) { return d.FlowStationLocation.Longitude != 0; });
-			console.log("fixed nodes: " + fixed_nodes.length);
-			console.log("new data: " + data.length);
-			fixed_nodes.forEach(function(d, i)
+			// Nodes might be different each time, not sure why but we'll
+			// try to match nodes using FlowDataID which uniquely identifies stations
+			// Data is always sorted on this
+			for (var i = 0, j = 0; j < data.length; )
+			{
+				if (i > forced_nodes.length)
 				{
-					d.flow = data[i];
-				});
-			forced_nodes.forEach(function(d, i)
+					//More nodes than before, append
+					forced_nodes.push({"x":data[j].FlowStationLocation.Longitude,
+									   "y":data[j].FlowStationLocation.Latitude,
+									   "fixed":false,
+									   "flow": data[j]});
+					fixed_nodes.push({"x":data[j].FlowStationLocation.Longitude,
+									   "y":data[j].FlowStationLocation.Latitude,
+									   "fixed":true,
+									   "flow": data[j]});
+					i++;
+					j++;
+				} else if (data[j].FlowDataID > forced_nodes[i].flow.FlowDataID)
 				{
-					d.flow = data[i];
-				});
-			links.forEach(function(d,i)
+					// A node disappeared
+					forced_nodes.splice(i, 1);
+					fixed_nodes.splice(i, 1);
+				} else if (data[j].FlowDataID < forced_nodes[i].flow.FlowDataID)
 				{
-					if (d.target.fixed != true)
+					// A new node appeared
+					forced_nodes.splice(i, 0, {"x":data[j].FlowStationLocation.Longitude,
+									   "y":data[j].FlowStationLocation.Latitude,
+									   "fixed":false,
+									   "flow": data[j]});
+					fixed_nodes.splice(i, 0, {"x":data[j].FlowStationLocation.Longitude,
+									   "y":data[j].FlowStationLocation.Latitude,
+									   "fixed":true,
+									   "flow": data[j]});
+					i++;
+					j++;
+				} else {
+					//Match! Replace.
+					forced_nodes[i].flow = data[j];
+					i++;
+					j++;
+				}
+			}
+			
+		//regenerate nest and links
+		roadnest = d3.nest()
+			.key(function(d) {return d.flow.FlowStationLocation.Direction + d.flow.FlowStationLocation.RoadName;})
+			.sortValues(function(a, b) {return a.flow.FlowStationLocation.MilePost - b.flow.FlowStationLocation.MilePost;})
+			.entries(forced_nodes);		
+			
+		nodes = forced_nodes.concat(fixed_nodes);
+		
+		//Create links between the two nodes for each station
+		links = forced_nodes.map(function(d, i)
+			{
+				return {"source":i, "target":i+forced_nodes.length, "dist":0};
+			});
+				
+		//Create links between adjacent nodes
+		roadnest.forEach(function(road)
+			{
+				road.values.forEach(function(d, i)
 					{
-						d.dist = flow_scale(d.source.flow.FlowReadingValue) *
-							flow_station_dist(d.source.flow, d.target.flow);
-					}
-				});
-			force.linkDistance(function(d) { return d.dist; })
+						if (i+1 < road.values.length)
+						{
+							links.push({"source":d,
+								"target":road.values[i+1],
+								"dist":flow_scale(d.flow.FlowReadingValue)*flow_station_dist(d.flow, road.values[i+1].flow)});
+						}
+					});
+			});
+			force.nodes(nodes)
+				.links(links)
+				.linkDistance(function(d) { return d.dist; })
 				.start();
 		}
 	});
