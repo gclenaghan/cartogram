@@ -27,9 +27,15 @@ svg.append("rect")
 svg.call(zoom)
 	.call(zoom.event);
 
-d3.json("wsdottrafficflow8172015.json",
+d3.json("827flows/8.json",
 	function(data)
 	{
+		d3.select("#time_select")
+			.on("input", function()
+				{
+					d3.json("827flows/"+d3.event.target.value, newflowdata);
+				});
+		
 		var flow_scale = d3.scale.ordinal()
 			.domain(d3.range(6))
 			//.range([1, 1, 1.5, 2, 3, 1]);
@@ -38,8 +44,7 @@ d3.json("wsdottrafficflow8172015.json",
 			.domain(["NB", "SB", "EB", "WB"]);
 		//Some data points have improper lat/long.
 		//Also, it's convenient to store the index here
-		data = data.filter(function(d) { return d.FlowStationLocation.Longitude != 0; })
-			.map(function(d, i) {d["index"] = i; return d;});
+		data = data.filter(function(d) { return d.FlowStationLocation.Longitude != 0; });
 		
 		//Create two copies of every flow station: one to be held in place, and the other (visible) to be forced according to traffic
 		//The two nodes will be linked together
@@ -125,5 +130,30 @@ d3.json("wsdottrafficflow8172015.json",
 			return Math.sqrt(
 				Math.pow(a.FlowStationLocation.Longitude-b.FlowStationLocation.Longitude,2) +
 				Math.pow(a.FlowStationLocation.Latitude-b.FlowStationLocation.Latitude,2));
+		}
+		
+		function newflowdata(data)
+		{
+			data = data.filter(function(d) { return d.FlowStationLocation.Longitude != 0; });
+			console.log("fixed nodes: " + fixed_nodes.length);
+			console.log("new data: " + data.length);
+			fixed_nodes.forEach(function(d, i)
+				{
+					d.flow = data[i];
+				});
+			forced_nodes.forEach(function(d, i)
+				{
+					d.flow = data[i];
+				});
+			links.forEach(function(d,i)
+				{
+					if (d.target.fixed != true)
+					{
+						d.dist = flow_scale(d.source.flow.FlowReadingValue) *
+							flow_station_dist(d.source.flow, d.target.flow);
+					}
+				});
+			force.linkDistance(function(d) { return d.dist; })
+				.start();
 		}
 	});
