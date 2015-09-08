@@ -1,4 +1,7 @@
-var width = 480, height = 540;
+var mapdiv = d3.select("#mapdiv")
+
+var width = parseInt(mapdiv.style("width")) - 120,
+	height = parseInt(mapdiv.style("height")) - 40;
 
 var proj = d3.geo.mercator()
 	.center([-121.33, 47.9])
@@ -9,7 +12,7 @@ var zoom = d3.behavior.zoom()
 	.scale(proj.scale())
 	.scaleExtent([10000,80000]);
 
-var svg = d3.select("#mapdiv")
+var svg = mapdiv
 	.append("svg")
 	.attr("width", width)
 	.attr("height", height)
