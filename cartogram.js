@@ -98,7 +98,7 @@ d3.json("827flows/0.json",
 		var road_path = d3.svg.line()
 			.x(function(d) { return proj([d.x, d.y])[0]; })
 			.y(function(d) { return proj([d.x, d.y])[1]; })
-			.interpolate("cardinal");
+			.interpolate("linear");
 
 		var roads = map_g.selectAll(".road") //Draw a line for each road link
 			.data(roadnest)
