@@ -23,7 +23,6 @@ in those areas.
 View it here: http://gclenaghan.github.io/cartogram/
 
 ##Potential future features:
- * More example files
  * Live traffic
  * Background map to help orientation
  * Ability to filter which roads are shown, by name or direction of travel.
