@@ -16,9 +16,11 @@ In particular, for each flow station, two nodes are created, one fixed and one f
 The free and fixed versions of each station are connected by a link of length 0, and consecutive
 nodes on a particular road are connected by a link with length some multiple of the true distance
 of the flow stations depending on how heavy traffic is. Then, a path is drawn interpolating
-between the free nodes for each road. In the end, each free node is drawn towards its true
+between the free nodes for each road. In the end, each free node is pulled towards its true
 location but is pushed away from nearby nodes in heavy traffic, typically creating zigzags
 in those areas.
+
+View it here: http://gclenaghan.github.io/cartogram/
 
 ##Potential future features:
  * More example files
